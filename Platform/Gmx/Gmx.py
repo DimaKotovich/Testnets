@@ -18,14 +18,18 @@ class Gmx:
         # self.data = pd.read_csv('./data/save.csv', error_bad_lines=False, sep=';', index_col=0)
         self.REMOTE_API = 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MjAzMDE5NiwidXNlcm5hbWUiOiJkb2xwaGluaWdvMzNAZ21haWwuY29tIiwicm9sZSI6ImFkbWluIiwidGVhbUlkIjoxOTc2NTQwLCJ0b2tlbkNyZWF0ZWRBdCI6MTY3NzI2ODEwOX0.4gzf3i4JWOwhVtJVWoX4AhiAz_s7keG9ZZXMHH_g95k'
         self.LOCALE_API = 'http://localhost:3001/v1.0/browser_profiles/'
+        self.FAUCET_API = 'https://faucet.avax.network/'
         self.CHROME_DRIVER = Service('../../chromedriver.exe')
+        self.SWAP_API = 'https://app.gmxtest.io/#/dashboard'
+        self.BUY_TOKEN_API = 'https://app.gmxtest.io/#/pools'
+        self.TRADE_API = 'https://app.gmxtest.io/#/v2'
         self.driver = None
         self.wallet = None
         self.session_wallet = False
         self.password = None
         self.contract_adress = None
-        # self.start_WebDriver(14)
-        self.accounts_multiprocess()
+        self.start_WebDriver(1000)
+        # self.accounts_multiprocess()
 
     def get_profiles(self):
         """Getting all of existing profiles in Dolphin account"""
@@ -169,11 +173,19 @@ class Gmx:
         self.driver = self.get_webdriver(port)
         self.set_page_to_front()
         self.close_all_tabs()
+        # self.check_current_page(self.FAUCET_API)
+        # self.press_faucet_connect_wallet_button()
+        # self.check_current_page(self.SWAP_API)
+        # self.press_dashboard_connect_wallet_button()
+        # self.check_current_page(self.BUY_TOKEN_API)
+        # self.buy_tokens()
+        self.check_current_page(self.TRADE_API)
+        self.buy_long()
 
         time.sleep(5)
-        self.close_all_tabs()
-        self.driver.quit()
-        self.close_profile(profile_id)
+        # self.close_all_tabs()
+        # self.driver.quit()
+        # self.close_profile(profile_id)
 
     def accounts_multiprocess(self):
         """Looping through all profiles and running them one by one + rebooting every account IP"""
@@ -197,6 +209,159 @@ class Gmx:
             print('Multiprocess error!')
 
         self.book.drop(columns=self.book.columns[9:], axis=1).to_csv('List_ID.csv', sep=';')
+
+    def press_faucet_connect_wallet_button(self):
+        """Pressing on connect wallet button and checking if it was connected"""
+        try:
+            WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable(
+                (By.XPATH, '/html/body/div[1]/div/div[1]/div[1]/div[2]/div[2]/div[1]/span'))).click()
+            try:
+                WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable(
+                    (By.XPATH, '/html/body/div[1]/div/div[1]/div[1]/div[2]/div[2]/button'))).click()
+            except TimeoutException:
+                print('press_faucet_connect_wallet_button: Could not find Request_2_AVAX button')
+        except TimeoutException:
+            print('press_faucet_connect_wallet_button: Could not find connect wallet button')
+
+    def press_dashboard_connect_wallet_button(self):
+        """Pressing on connect wallet button and checking if it was connected"""
+        try:
+            WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable(
+                (By.XPATH, '//*[@id="root"]/div[1]/div/header/div[1]/div[2]/div/button'))).click()
+            try:
+                WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable(
+                    (By.XPATH, '/html/body/div[1]/div[4]/div[2]/div[3]/div/button[1]'))).click()
+            except TimeoutException:
+                print('press_dashboard_connect_wallet_button: Could not find meta mask button')
+        except TimeoutException:
+            try:
+                WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable(
+                    (By.XPATH, '//*[@id="headlessui-menu-button-144"]/button'))).click()
+            except TimeoutException:
+                print('press_dashboard_connect_wallet_button: Could not find connect wallet button')
+
+    def buy_tokens(self):
+        """Buying tokens"""
+        try:
+            time.sleep(5)
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(
+                (By.XPATH, '/html/body/div[1]/div[1]/div/div/div[2]/div[2]/div/div[3]/div[1]/div[2]/div[1]/input'))).send_keys('0.1')
+            try:
+                WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                    (By.XPATH, '/html/body/div[1]/div[1]/div/div/div[2]/div[2]/div/div[5]/button'))).click()
+            except TimeoutException:
+                try:
+                    WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                        (By.XPATH, '//*[@id="root"]/div[1]/div/div/div[2]/div[2]/div/div[5]/button'))).click()
+                except TimeoutException:
+                    print('buy_tokens: Could not find Enter_An_Amount button')
+        except TimeoutException:
+            print('buy_tokens: Could not find pay input')
+
+    def buy_short(self):
+        """Buying in short position"""
+        try:
+            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                (By.XPATH,
+                 '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div[1]/form/div/div[1]/div[1]/div[2]'))).click()
+            time.sleep(5)
+            try:
+                WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                    (By.XPATH,
+                     '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div[1]/form/div/div[4]/div[2]/div[2]/div/div'))).click()
+                try:
+                    WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                        (By.XPATH,
+                         '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div[1]/form/div/div[4]/div[2]/div[2]/div/div[1]/div[2]/div[3]/div/div/div[1]'))).click()
+
+                    try:
+                        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(
+                            (By.XPATH,
+                             '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div[1]/form/div/div[2]/div[2]/div[1]/input'))).send_keys(
+                            '0.1')
+
+                        try:
+                            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                                (By.XPATH,
+                                 '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div/div[1]/div[7]/button'))).click()
+
+                            try:
+                                WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                                    (By.XPATH,
+                                     '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div/div[4]/div/div[2]/div[3]/div/div[1]/div[13]/div/span[1]/svg'))).click()
+
+                                try:
+                                    WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                                        (By.XPATH,
+                                         '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div/div[4]/div/div[2]/div[3]/div/div[2]/button'))).click()
+                                except TimeoutException:
+                                    print('buy_long: could not find buy button')
+
+                            except TimeoutException:
+                                print('buy_long: could not find checkbox')
+
+                        except TimeoutException:
+                            print('buy_long: Cold not find buy button')
+
+                    except TimeoutException:
+                        print('buy_long: could not find token input')
+
+                except TimeoutException:
+                    print('buy_long: could not find select token button')
+
+            except TimeoutException:
+                print('buy_long: could not find change token button')
+        except TimeoutException:
+            print('buy_short: could not find short button')
+
+    def buy_long(self):
+        """Buying in long position"""
+        time.sleep(5)
+        try:
+            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                (By.XPATH, '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div[1]/form/div/div[4]/div[2]/div[2]/div/div'))).click()
+            try:
+                WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                    (By.XPATH,
+                     '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div[1]/form/div/div[4]/div[2]/div[2]/div/div[1]/div[2]/div[3]/div/div/div[1]'))).click()
+
+                try:
+                    WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(
+                        (By.XPATH,
+                         '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div[1]/form/div/div[2]/div[2]/div[1]/input'))).send_keys(
+                        '0.1')
+
+                    try:
+                        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                            (By.XPATH,
+                             '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div/div[1]/div[7]/button'))).click()
+
+                        try:
+                            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                                (By.XPATH,
+                                 '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div/div[4]/div/div[2]/div[3]/div/div[1]/div[10]/div/span[1]/svg'))).click()
+
+                            try:
+                                WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
+                                    (By.XPATH,
+                                     '/html/body/div[1]/div[1]/div/div/div[1]/div[2]/div/div[4]/div/div[2]/div[3]/div/div[2]/button'))).click()
+                            except TimeoutException:
+                                print('buy_long: could not find buy button')
+
+                        except TimeoutException:
+                            print('buy_long: could not find checkbox')
+
+                    except TimeoutException:
+                        print('buy_long: Cold not find buy button')
+
+                except TimeoutException:
+                    print('buy_long: could not find token input')
+
+            except TimeoutException:
+                print('buy_long: could not find select token button')
+
+        except TimeoutException:
+            print('buy_long: could not find change token button')
 
 
 Gmx()
